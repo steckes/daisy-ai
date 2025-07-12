@@ -54,7 +54,7 @@ macro_rules! bench_time {
     }};
 }
 
-#[model("sine.tflite")]
+#[model("src/model/sine.tflite")]
 struct Sine;
 
 #[cortex_m_rt::entry]
