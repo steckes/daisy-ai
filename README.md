@@ -69,3 +69,5 @@ getent group plugdev || sudo groupadd plugdev
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 ```
+
+More information: [https://probe.rs/docs/getting-started/probe-setup/](https://probe.rs/docs/getting-started/probe-setup/)

@@ -13,6 +13,8 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 
+use burn_import::onnx::{ModelGen, RecordType};
+
 fn main() {
     // Put `memory.x` in our output directory and ensure it's
     // on the linker search path.
@@ -28,4 +30,16 @@ fn main() {
     // here, we ensure the build script is only re-run when
     // `memory.x` is changed.
     println!("cargo:rerun-if-changed=memory.x");
+
+    generate_model();
+}
+
+fn generate_model() {
+    // Generate the model code from the ONNX file.
+    ModelGen::new()
+        .input("src/model/sine.onnx")
+        .out_dir("model/")
+        .record_type(RecordType::Bincode)
+        .embed_states(true)
+        .run_from_script();
 }
