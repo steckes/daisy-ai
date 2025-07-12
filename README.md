@@ -17,13 +17,13 @@ daisy = { version = "0.11", features = ["seed_1_1"] }
 ### With ST-Link Mini Debug Probe
 
 ```sh
-cargo run --release
+cargo run --release --bin daisy-ai
 ```
 
 ### With dfu-util
 
 ```sh
-cargo objcopy --release -- -O binary target/program.bin
+cargo objcopy --release --bin daisy-ai -- -O binary target/program.bin
 dfu-util -a 0 -s 0x08000000:leave -D target/program.bin -d ,0483:df11
 ```
 
