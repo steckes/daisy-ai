@@ -8,7 +8,7 @@ use nalgebra::matrix;
 
 use {defmt_rtt as _, panic_probe as _};
 
-#[model("sine.tflite")]
+#[model("src/model/sine.tflite")]
 struct Sine;
 
 #[entry]
