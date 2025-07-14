@@ -28,7 +28,7 @@ indicating the bootloader is active and waiting.
 ### 2. Build and flash the program
 
 ```sh
-cargo objcopy --release -- -O binary target/program.bin
+cargo objcopy --release --bin daisy-ai -- -O binary target/program.bin
 dfu-util -a 0 -s 0x90040000:leave -D target/program.bin -d ,0483:df11
 ```
 
