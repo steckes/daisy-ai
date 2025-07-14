@@ -1,3 +1,5 @@
+//! Example of basic interaction with the board.
+
 #![no_main]
 #![no_std]
 
@@ -28,11 +30,13 @@ fn main() -> ! {
         unsafe { HEAP.init(&raw mut HEAP_MEM as usize, HEAP_SIZE) }
     }
 
-    // Get a default device for the backend
-    let device = BackendDevice::default();
+    let mut cortex_peripherals = cortex_m::Peripherals::take().unwrap();
 
-    // Create a new model and load the state
-    let model: Model<Backend> = Model::default();
+    // Enable instruction and data caches for better performance
+    cortex_peripherals.SCB.enable_icache();
+    cortex_peripherals
+        .SCB
+        .enable_dcache(&mut cortex_peripherals.CPUID);
 
     // Get device peripherals and the board abstraction.
     let dp = daisy::pac::Peripherals::take().unwrap();
@@ -43,12 +47,15 @@ fn main() -> ! {
     let pins = daisy::board_split_gpios!(board, ccdr, dp);
     let mut led_user = daisy::board_split_leds!(pins).USER;
 
-    defmt::println!("Done initializing model...");
+    // Get a default device for the backend
+    let device = BackendDevice::default();
 
-    // Define input
+    // Create a new model and load the state
+    let model: Model<Backend> = Model::default();
+
+    // Blink every second.
+    let one_second = ccdr.clocks.sys_ck().to_Hz();
     let mut input = 0.0;
-
-    // Run inference in a loop
     loop {
         if input > 2.0 {
             input = 0.0
@@ -65,6 +72,8 @@ fn main() -> ! {
         };
 
         led_user.toggle();
+        cortex_m::asm::delay(one_second);
+        defmt::info!("Tick");
     }
 }
 

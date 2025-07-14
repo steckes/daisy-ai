@@ -5,8 +5,8 @@ edition = "2024"
 
 [dependencies]
 burn = { version = "0.17.1", default-features = false, features = ["ndarray"] }
-cortex-m = "0.7.7"
-cortex-m-rt = "0.7.5"
+cortex-m = "0.7"
+cortex-m-rt = { version = "0.7", features = ["device", "set-vtor"] }
 daisy = { version = "0.11.0", features = ["defmt", "seed_1_1"] }
 defmt = "1.0.1"
 defmt-rtt = "1.0.0"
@@ -15,3 +15,6 @@ panic-probe = "1.0.0"
 
 [build-dependencies]
 burn-import = "0.17.1"
+
+[profile.release]
+opt-level = "z"

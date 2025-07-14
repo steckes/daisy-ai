@@ -14,17 +14,27 @@ daisy = { version = "0.11", features = ["seed_1_1"] }
 
 ## Flash Firmware
 
-### With ST-Link Mini Debug Probe
+### 1. Flash Bootloader
 
-```sh
-cargo run --release
-```
+First, install the bootloader on the board. You can use <https://flash.daisy.audio/>,
+go to the "Bootloader" tab, select version "v6.2", and flash it. Alternatively
+you can use the [libDaisy](https://github.com/electro-smith/libDaisy/tree/master)
+project and its `Makefile`.
 
-### With dfu-util
+Once the bootloader is installed, restart the module and press the BOOT button
+within the first 2 seconds after startup. The onboard LED should start pulsing,
+indicating the bootloader is active and waiting.
+
+### 2. Build and flash the program
 
 ```sh
 cargo objcopy --release -- -O binary target/program.bin
-dfu-util -a 0 -s 0x08000000:leave -D target/program.bin -d ,0483:df11
+dfu-util -a 0 -s 0x90040000:leave -D target/program.bin -d ,0483:df11
+```
+
+## Attach Debug Probe
+```sh
+probe-rs attach --chip STM32H750VBTx --protocol swd target/thumbv7em-none-eabihf/release/daisy-ai
 ```
 
 ## Environment Setup Fedora
