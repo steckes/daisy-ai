@@ -17,4 +17,5 @@ panic-probe = "1.0.0"
 burn-import = "0.17.1"
 
 [profile.release]
+codegen-units = 1
 opt-level = "z"

@@ -63,7 +63,7 @@ macro_rules! bench_cycles {
 macro_rules! bench_time {
     ( $cp:expr, $sysclk_hz:expr, $x:expr ) => {{
         let cycles = $crate::bench_cycles!($cp, $x);
-        (cycles as f32) / ($sysclk_hz as f32)
+        (cycles, (cycles as f32) / ($sysclk_hz as f32))
     }};
 }
 
@@ -109,30 +109,38 @@ fn main() -> ! {
     // Create a new model and load the state
     let model: Model<Backend> = Model::default();
 
-    // Benchmark the dot product calculation and measure execution time
-    let x = 0.5;
-    let execution_time = bench_time!(cortex_peripherals, system_clock_frequency_hz, {
-        // Run the model prediction
-        let output = run_model(&model, &device, x);
-        black_box(output);
-    });
+    let mut x = 0.5;
 
+    let one_second = system_clock_frequency_hz;
     // Loop infinite
     loop {
+        if x > 2.0 {
+            x = 0.0
+        }
+        x += 0.05;
+
+        let (cycles, execution_time) =
+            // Benchmark the dot product calculation and measure execution time
+            bench_time!(cortex_peripherals, system_clock_frequency_hz, {
+                // Run the model prediction
+                let output = run_model(&model, &device, x);
+                black_box(output);
+            });
+
+        defmt::println!("Cycles: {}", cycles);
         defmt::println!("Time: {} us", execution_time * US as f32);
 
         led_user.toggle();
-        cortex_m::asm::delay(system_clock_frequency_hz);
-        defmt::info!("Tick");
+        cortex_m::asm::delay(one_second);
     }
 }
 
-fn run_model<'a>(model: &Model<NdArray>, device: &BackendDevice, input: f32) -> Tensor<Backend, 2> {
+fn run_model<'a>(model: &Model<NdArray>, device: &BackendDevice, input: f32) -> f32 {
     // Define the tensor
     let input = Tensor::<Backend, 2>::from_floats([[input]], &device);
 
     // Run the model on the input
     let output = model.forward(input);
 
-    output
+    output.into_data().as_slice().unwrap()[0]
 }

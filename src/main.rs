@@ -7,6 +7,7 @@ mod model;
 
 use burn::{backend::NdArray, tensor::Tensor};
 use cortex_m_rt::entry;
+use defmt::println;
 
 use crate::model::sine::Model;
 
@@ -39,12 +40,12 @@ fn main() -> ! {
         .enable_dcache(&mut cortex_peripherals.CPUID);
 
     // Get device peripherals and the board abstraction.
-    let dp = daisy::pac::Peripherals::take().unwrap();
-    let board = daisy::Board::take().unwrap();
+    let device_peripherals = daisy::pac::Peripherals::take().unwrap();
+    let daisy_board = daisy::Board::take().unwrap();
 
     // Configure board's peripherals.
-    let ccdr = daisy::board_freeze_clocks!(board, dp);
-    let pins = daisy::board_split_gpios!(board, ccdr, dp);
+    let clock_configuration = daisy::board_freeze_clocks!(daisy_board, device_peripherals);
+    let pins = daisy::board_split_gpios!(daisy_board, clock_configuration, device_peripherals);
     let mut led_user = daisy::board_split_leds!(pins).USER;
 
     // Get a default device for the backend
@@ -54,7 +55,7 @@ fn main() -> ! {
     let model: Model<Backend> = Model::default();
 
     // Blink every second.
-    let one_second = ccdr.clocks.sys_ck().to_Hz();
+    let one_second = clock_configuration.clocks.sys_ck().to_Hz();
     let mut input = 0.0;
     loop {
         if input > 2.0 {
@@ -66,23 +67,20 @@ fn main() -> ! {
         let output = run_model(&model, &device, input);
 
         // Output the values
-        match output.into_data().as_slice::<f32>() {
-            Ok(slice) => defmt::println!("input: {} - output: {}", input, slice),
-            Err(err) => core::panic!("err: {:?}", err),
-        };
+        println!("Predicted sin({}): {}", input, output);
+        println!("Calculated sin({}): {}", input, libm::sinf(input));
 
         led_user.toggle();
         cortex_m::asm::delay(one_second);
-        defmt::info!("Tick");
     }
 }
 
-fn run_model<'a>(model: &Model<NdArray>, device: &BackendDevice, input: f32) -> Tensor<Backend, 2> {
+fn run_model<'a>(model: &Model<NdArray>, device: &BackendDevice, input: f32) -> f32 {
     // Define the tensor
     let input = Tensor::<Backend, 2>::from_floats([[input]], &device);
 
     // Run the model on the input
     let output = model.forward(input);
 
-    output
+    output.into_data().as_slice().unwrap()[0]
 }
