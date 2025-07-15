@@ -50,7 +50,7 @@ macro_rules! bench_cycles {
 macro_rules! bench_time {
     ( $cp:expr, $sysclk_hz:expr, $x:expr ) => {{
         let cycles = $crate::bench_cycles!($cp, $x);
-        (cycles as f32) / ($sysclk_hz as f32)
+        (cycles, (cycles as f32) / ($sysclk_hz as f32))
     }};
 }
 
@@ -78,22 +78,34 @@ fn main() -> ! {
 
     // Configure and freeze the clock settings for the board
     let clock_configuration = daisy::board_freeze_clocks!(daisy_board, device_peripherals);
+    let pins = daisy::board_split_gpios!(daisy_board, clock_configuration, device_peripherals);
+    let mut led_user = daisy::board_split_leds!(pins).USER;
 
     // Get the system clock frequency in Hz
     let system_clock_frequency_hz = clock_configuration.clocks.sys_ck().to_Hz();
+    let one_second = system_clock_frequency_hz;
 
-    // Benchmark the dot product calculation and measure execution time
-    let x = 0.5;
-    let execution_time = bench_time!(cortex_peripherals, system_clock_frequency_hz, {
-        // Run the model prediction
-        let y_predicted = Sine::predict(matrix![x])[0];
-        black_box(y_predicted);
-    });
-
-    defmt::println!("Time: {} us", execution_time * US as f32);
+    let mut x = 0.5;
 
     // Loop infinite
     loop {
-        cortex_m::asm::wfi(); // Wait for interrupt (low power)
+        if x > 2.0 {
+            x = 0.0
+        }
+        x += 0.05;
+
+        // Benchmark the dot product calculation and measure execution time
+        let (cycles, execution_time) =
+            bench_time!(cortex_peripherals, system_clock_frequency_hz, {
+                // Run the model prediction
+                let y_predicted = Sine::predict(matrix![x])[0];
+                black_box(y_predicted);
+            });
+
+        defmt::println!("Cycles: {}", cycles);
+        defmt::println!("Time: {} us", execution_time * US as f32);
+
+        led_user.toggle();
+        cortex_m::asm::delay(one_second);
     }
 }
